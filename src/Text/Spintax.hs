@@ -11,7 +11,7 @@ import System.Random.MWC
 
 -- | Generate random texts based on a spinning syntax template, with nested alternatives and empty options.
 --
--- >λ> spintax "{A||B|C|{a|b|c|{1|2|3}|d}|D}"
+-- >λ> spintax "{A||B|C|{a|b|c{1|2|3}|d}|D}"
 -- > Right "c2"
 --
 spintax :: T.Text -> IO (Either T.Text T.Text)
@@ -46,7 +46,7 @@ spintax template =
                                     then getText gen output ["",""] rest nestlev
                                     else getText gen output (E.snoc alters "") rest nestlev
                             _   -> getText gen output (addToLast alters match) rest nestlev
-                    Partial _ -> return $ Right $ output `append` input
+                    Partial _ -> return failure
                     Fail {} -> return failure 
             | nestlev > 1 =
                 case parse spinSyntax input of
@@ -55,7 +55,7 @@ spintax template =
                             "{" -> getText gen output (addToLast alters match) rest (nestlev+1)
                             "}" -> getText gen output (addToLast alters match) rest (nestlev-1)
                             _   -> getText gen output (addToLast alters match) rest nestlev
-                    Partial _ -> return $ Right $ output `append` input
+                    Partial _ -> return failure
                     Fail {} -> return failure
           where
             failure = Left "Spintax parsing failure"
