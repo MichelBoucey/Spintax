@@ -6,6 +6,7 @@ import Control.Applicative ((<|>))
 import Data.Attoparsec.Text
 import Data.Either
 import Data.List.Extra as E
+import Data.Monoid ((<>))
 import Data.Text as T
 import System.Random.MWC
 
@@ -16,7 +17,7 @@ import System.Random.MWC
 --
 spintax :: T.Text -> IO (Either T.Text T.Text)
 spintax template =
-    createSystemRandom >>= \gen -> runParse gen template
+    createSystemRandom >>= flip runParse template
   where
     runParse gen input =
         getText gen "" [] input 0
@@ -30,8 +31,8 @@ spintax template =
                             "{" -> getText gen output alters rest (nestlev+1)
                             "}" -> return failure
                             "|" -> return failure
-                            _   -> getText gen (output `append` match) alters rest nestlev
-                    Partial _ -> return $ Right $ output `append` input
+                            _   -> getText gen (output <> match) alters rest nestlev
+                    Partial _ -> return $ Right $ output <> input
                     Fail {} -> return failure
             | nestlev == 1 =
                 case parse spinSyntax input of
@@ -41,7 +42,7 @@ spintax template =
                             "}" -> do result <- runParse gen =<< randAlter gen alters
                                       case result of
                                           Left _ -> return failure
-                                          Right text -> getText gen (output `append` text) [] rest (nestlev-1)
+                                          Right text -> getText gen (output <> text) [] rest (nestlev-1)
                             "|" -> if E.null alters
                                     then getText gen output ["",""] rest nestlev
                                     else getText gen output (E.snoc alters "") rest nestlev
@@ -61,7 +62,7 @@ spintax template =
             failure = Left "Spintax template parsing failure"
             addToLast l t =
                 case E.unsnoc l of
-                    Just (xs,x) -> E.snoc xs $ x `append` t
+                    Just (xs,x) -> E.snoc xs $ x <> t
                     Nothing     -> [t]
             randAlter g as = uniformR (1,E.length as) g >>= \r -> return $ (!!) as (r-1)
             spinSyntax =
