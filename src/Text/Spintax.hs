@@ -2,13 +2,13 @@
 
 module Text.Spintax where
 
-import Control.Applicative ((<|>))
-import Data.Attoparsec.Text
-import Data.Either
-import Data.List.Extra as E
-import Data.Monoid ((<>))
-import Data.Text as T
-import System.Random.MWC
+import           Control.Applicative  ((<|>))
+import           Data.Attoparsec.Text
+import           Data.Either
+import qualified Data.List.Extra      as E
+import           Data.Monoid          ((<>))
+import qualified Data.Text            as T
+import           System.Random.MWC
 
 -- | Generate random texts based on a spinning syntax template, with nested alternatives and empty options.
 --
@@ -22,7 +22,7 @@ spintax template =
     runParse gen input =
         getText gen "" [] input 0
       where
-        getText gen output alters input nestlev 
+        getText gen output alters input nestlev
             | nestlev < 0  = return failure
             | nestlev == 0 =
                 case parse spinSyntax input of
@@ -48,7 +48,7 @@ spintax template =
                                     else getText gen output (E.snoc alters "") rest nestlev
                             _   -> getText gen output (addToLast alters match) rest nestlev
                     Partial _ -> return failure
-                    Fail {} -> return failure 
+                    Fail {} -> return failure
             | nestlev > 1 =
                 case parse spinSyntax input of
                     Done rest match ->
