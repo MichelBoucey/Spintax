@@ -4,7 +4,6 @@ module Text.Spintax where
 
 import           Control.Applicative  ((<|>))
 import           Data.Attoparsec.Text
-import           Data.Either
 import qualified Data.List.Extra      as E
 import           Data.Monoid          ((<>))
 import qualified Data.Text            as T
@@ -19,52 +18,50 @@ spintax :: T.Text -> IO (Either T.Text T.Text)
 spintax template =
     createSystemRandom >>= flip runParse template
   where
-    runParse gen input =
-        getText gen "" [] input 0
+    runParse gen' input' = getText gen' "" [] input' (0::Int)
       where
         getText gen output alters input nestlev
-            | nestlev < 0  = return failure
+            | nestlev < 0  = failure
             | nestlev == 0 =
                 case parse spinSyntax input of
-                    Done rest match ->
-                        case match of
+                    Done rest _match ->
+                        case _match of
                             "{" -> getText gen output alters rest (nestlev+1)
-                            "}" -> return failure
-                            "|" -> return failure
-                            _   -> getText gen (output <> match) alters rest nestlev
+                            "}" -> failure
+                            "|" -> failure
+                            _   -> getText gen (output <> _match) alters rest nestlev
                     Partial _ -> return $ Right $ output <> input
-                    Fail {} -> return failure
+                    Fail {} -> failure
             | nestlev == 1 =
                 case parse spinSyntax input of
-                    Done rest match ->
-                        case match of
-                            "{" -> getText gen output (addToLast alters match) rest (nestlev+1)
+                    Done rest _match ->
+                        case _match of
+                            "{" -> getText gen output (addToLast alters _match) rest (nestlev+1)
                             "}" -> do result <- runParse gen =<< randAlter gen alters
                                       case result of
-                                          Left _ -> return failure
+                                          Left _ -> failure
                                           Right text -> getText gen (output <> text) [] rest (nestlev-1)
                             "|" -> if E.null alters
                                     then getText gen output ["",""] rest nestlev
                                     else getText gen output (E.snoc alters "") rest nestlev
-                            _   -> getText gen output (addToLast alters match) rest nestlev
-                    Partial _ -> return failure
-                    Fail {} -> return failure
+                            _   -> getText gen output (addToLast alters _match) rest nestlev
+                    Partial _ -> failure
+                    Fail {} -> failure
             | nestlev > 1 =
                 case parse spinSyntax input of
-                    Done rest match ->
-                        case match of
-                            "{" -> getText gen output (addToLast alters match) rest (nestlev+1)
-                            "}" -> getText gen output (addToLast alters match) rest (nestlev-1)
-                            _   -> getText gen output (addToLast alters match) rest nestlev
-                    Partial _ -> return failure
-                    Fail {} -> return failure
+                    Done rest _match ->
+                        case _match of
+                            "{" -> getText gen output (addToLast alters _match) rest (nestlev+1)
+                            "}" -> getText gen output (addToLast alters _match) rest (nestlev-1)
+                            _   -> getText gen output (addToLast alters _match) rest nestlev
+                    Partial _ -> failure
+                    Fail {} -> failure
           where
-            failure = Left "Spintax template parsing failure"
             addToLast l t =
                 case E.unsnoc l of
                     Just (xs,x) -> E.snoc xs $ x <> t
                     Nothing     -> [t]
-            randAlter g as = uniformR (1,E.length as) g >>= \r -> return $ (!!) as (r-1)
+            randAlter _g as = uniformR (1,E.length as) _g >>= \r -> return $ (!!) as (r-1)
             spinSyntax =
                 openBrace <|> closeBrace <|> pipe <|> content
               where
@@ -78,4 +75,8 @@ spintax template =
                     ctt '}' = False
                     ctt '|' = False
                     ctt _   = True
+        getText _ _ _ _ _ = failure
+
+failure :: IO (Either T.Text b)
+failure = return $ Left "Spintax template parsing failure"
 
