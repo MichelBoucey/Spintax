@@ -18,50 +18,52 @@ spintax :: T.Text -> IO (Either T.Text T.Text)
 spintax template =
     createSystemRandom >>= flip runParse template
   where
-    runParse gen' input' = getText gen' "" [] input' (0::Int)
+    runParse g' i' = go g' "" [] i' (0::Int)
       where
-        getText gen output alters input nestlev
-            | nestlev < 0  = failure
-            | nestlev == 0 =
-                case parse spinSyntax input of
-                    Done rest _match ->
-                        case _match of
-                            "{" -> getText gen output alters rest (nestlev+1)
+        go g o as i l
+            | l < 0  = failure
+            | l == 0 =
+                case parse spinSyntax i of
+                    Done r m  ->
+                        case m of
+                            "{" -> go g o as r (l+1)
                             "}" -> failure
                             "|" -> failure
-                            _   -> getText gen (output <> _match) alters rest nestlev
-                    Partial _ -> return $ Right $ output <> input
-                    Fail {} -> failure
-            | nestlev == 1 =
-                case parse spinSyntax input of
-                    Done rest _match ->
-                        case _match of
-                            "{" -> getText gen output (addToLast alters _match) rest (nestlev+1)
-                            "}" -> do result <- runParse gen =<< randAlter gen alters
-                                      case result of
+                            _   -> go g (o <> m) as r l
+                    Partial _ -> return $ Right $ o <> i
+                    Fail {}   -> failure
+            | l == 1 =
+                case parse spinSyntax i of
+                    Done r m ->
+                        case m of
+                            "{" -> go g o (add as m) r (l+1)
+                            "}" -> do r' <- runParse g =<< randAlter g as
+                                      case r' of
                                           Left _ -> failure
-                                          Right text -> getText gen (output <> text) [] rest (nestlev-1)
-                            "|" -> if E.null alters
-                                    then getText gen output ["",""] rest nestlev
-                                    else getText gen output (E.snoc alters "") rest nestlev
-                            _   -> getText gen output (addToLast alters _match) rest nestlev
+                                          Right t ->
+                                              go g (o <> t) [] r (l-1)
+                            "|" -> if E.null as
+                                       then go g o ["",""] r l
+                                       else go g o (E.snoc as "") r l
+                            _   -> go g o (add as m) r l
                     Partial _ -> failure
                     Fail {} -> failure
-            | nestlev > 1 =
-                case parse spinSyntax input of
-                    Done rest _match ->
-                        case _match of
-                            "{" -> getText gen output (addToLast alters _match) rest (nestlev+1)
-                            "}" -> getText gen output (addToLast alters _match) rest (nestlev-1)
-                            _   -> getText gen output (addToLast alters _match) rest nestlev
+            | l > 1 =
+                case parse spinSyntax i of
+                    Done r m ->
+                        case m of
+                            "{" -> go g o (add as m) r (l+1)
+                            "}" -> go g o (add as m) r (l-1)
+                            _   -> go g o (add as m) r l
                     Partial _ -> failure
                     Fail {} -> failure
           where
-            addToLast l t =
-                case E.unsnoc l of
-                    Just (xs,x) -> E.snoc xs $ x <> t
-                    Nothing     -> [t]
-            randAlter _g as = uniformR (1,E.length as) _g >>= \r -> return $ (!!) as (r-1)
+            add _l _t =
+                case E.unsnoc _l of
+                    Just (xs,x) -> E.snoc xs $ x <> _t
+                    Nothing     -> [_t]
+            randAlter _g _as =
+                (\r -> (!!) as (r-1)) <$> uniformR (1,E.length _as) _g
             spinSyntax =
                 openBrace <|> closeBrace <|> pipe <|> content
               where
@@ -75,7 +77,7 @@ spintax template =
                     ctt '}' = False
                     ctt '|' = False
                     ctt _   = True
-        getText _ _ _ _ _ = failure
+        go _ _ _ _ _ = failure
 
 failure :: IO (Either T.Text b)
 failure = return $ Left "Spintax template parsing failure"
