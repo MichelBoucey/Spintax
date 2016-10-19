@@ -1,12 +1,12 @@
 name:                Spintax
-version:             0.1.0.0
+version:             0.1.0.1
 synopsis:            Random text generation based on spintax
 description:         Random text generation based on spintax with nested alternatives and empty options.
 homepage:            https://github.com/MichelBoucey/spintax
 license:             BSD3
 license-file:        LICENSE
 author:              Michel Boucey
-maintainer:          michel.boucey@gmail.com
+maintainer:          michel.boucey@cybervisible.fr
 copyright:           Copyright (c) 2016 - Michel Boucey
 category:            Text
 build-type:          Simple
