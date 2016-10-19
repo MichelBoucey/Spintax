@@ -1,4 +1,4 @@
-# Spintax [![Build Status](https://travis-ci.org/MichelBoucey/spintax.svg?branch=master)](https://travis-ci.org/MichelBoucey/spintax)
+# Spintax [![Build Status](https://travis-ci.org/MichelBoucey/Spintax.svg?branch=master)](https://travis-ci.org/MichelBoucey/Spintax)
 
 Random text generation based on spintax, i.e. spinning syntax, template with nested alternatives and empty options, like this:
 
