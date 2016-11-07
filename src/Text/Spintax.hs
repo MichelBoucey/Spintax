@@ -11,10 +11,10 @@ import           System.Random.MWC
 
 -- | Generate random texts based on a spinning syntax template, with nested alternatives and empty options.
 --
--- >λ> spintax {{Oh my God|Awesome}, {a|the}|A|The} {quick {and dirty |||}||}{brown |pink |grey |}{fox|flea|elephant} jumps over {the|a} {lazy |smelly |sleepy |}{dog|cat|whale}{.|!|...}
+-- >λ> spintax "{{Oh my God|Awesome}, {a|the}|A|The} {quick {and dirty |||}||}{brown |pink |grey |}{fox|flea|elephant} jumps over {the|a} {lazy |smelly |sleepy |}{dog|cat|whale}{.|!|...}"
 -- > Right "Awesome, the quick pink fox jumps over a sleepy whale."
 --
-spintax :: T.Text -> IO (Either T.Text T.Text)
+spintax :: T.Text -> IO (Either String T.Text)
 spintax template =
   createSystemRandom >>= flip runParse template
     where
@@ -37,13 +37,15 @@ spintax template =
                 Done r m ->
                   case m of
                     "{" -> go g o (add as m) r (l+1)
-                    "}" -> do r' <- runParse g =<< randAlter g as
-                              case r' of
-                                Left _ -> failure
-                                Right t -> go g (o <> t) [] r (l-1)
-                    "|" -> if E.null as
-                             then go g o ["",""] r l
-                             else go g o (E.snoc as "") r l
+                    "}" -> do
+                      r' <- runParse g =<< randAlter g as
+                      case r' of
+                        Left _ -> failure
+                        Right t -> go g (o <> t) [] r (l-1)
+                    "|" ->
+                      if E.null as
+                        then go g o ["",""] r l
+                        else go g o (E.snoc as "") r l
                     _   -> go g o (add as m) r l
                 Partial _ -> failure
                 Fail {} -> failure
@@ -78,6 +80,6 @@ spintax template =
                           ctt _   = True
           go _ _ _ _ _ = failure
 
-failure :: IO (Either T.Text b)
-failure = return $ Left "Spintax template parsing failure"
+failure :: IO (Either String b)
+failure = fail "Spintax template parsing failure"
 
