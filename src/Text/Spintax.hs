@@ -40,10 +40,9 @@ spintax template =
                 case m of
                   "{" -> go o (add as m) r (l+1)
                   "}" -> do
-                    g <- ask
-                    r' <- spin =<< randAlter g as
-                    case r' of
-                      Left _ -> parseFail
+                    s <- spin =<< randAlter as =<< ask
+                    case s of
+                      Left _   -> parseFail
                       Right t' -> go (o <> t') [] r (l-1)
                   "|" ->
                     if E.null as
@@ -60,13 +59,13 @@ spintax template =
                   "}" -> go o (add as m) r (l-1)
                   _   -> go o (add as m) r l
               Partial _ -> parseFail
-              Fail {} -> parseFail
+              Fail {}   -> parseFail
           where
             add _l _t =
               case E.unsnoc _l of
                 Just (xs,x) -> E.snoc xs $ x <> _t
                 Nothing     -> [_t]
-            randAlter _g _as =
+            randAlter _as _g =
               (\r -> (!!) as (r-1)) <$> uniformR (1,E.length _as) _g
         go _ _ _ _ = parseFail 
         parseFail = fail msg
