@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Text.Spintax (spintax) where
 
 import           Control.Applicative  ((<|>))
+import           Control.Monad.Reader (runReaderT, ask)
 import           Data.Attoparsec.Text
 import qualified Data.List.Extra      as E
 import           Data.Monoid          ((<>))
@@ -16,70 +18,74 @@ import           System.Random.MWC
 --
 spintax :: T.Text -> IO (Either String T.Text)
 spintax template =
-  createSystemRandom >>= flip runParse template
-    where
-      runParse g' i' = go g' "" [] i' (0::Int)
-        where
-          go g o as i l
-            | l < 0  = failure
-            | l == 0 =
-              case parse spinSyntax i of
-                Done r m  ->
-                  case m of
-                    "{" -> go g o as r (l+1)
-                    "}" -> failure
-                    "|" -> failure
-                    _   -> go g (o <> m) as r l
-                Partial _ -> return $ Right $ o <> i
-                Fail {}   -> failure
-            | l == 1 =
-              case parse spinSyntax i of
-                Done r m ->
-                  case m of
-                    "{" -> go g o (add as m) r (l+1)
-                    "}" -> do
-                      r' <- runParse g =<< randAlter g as
-                      case r' of
-                        Left _ -> failure
-                        Right t -> go g (o <> t) [] r (l-1)
-                    "|" ->
-                      if E.null as
-                        then go g o ["",""] r l
-                        else go g o (E.snoc as "") r l
-                    _   -> go g o (add as m) r l
-                Partial _ -> failure
-                Fail {} -> failure
-            | l > 1 =
-              case parse spinSyntax i of
-                Done r m ->
-                  case m of
-                    "{" -> go g o (add as m) r (l+1)
-                    "}" -> go g o (add as m) r (l-1)
-                    _   -> go g o (add as m) r l
-                Partial _ -> failure
-                Fail {} -> failure
-            where
-              add _l _t =
-                case E.unsnoc _l of
-                  Just (xs,x) -> E.snoc xs $ x <> _t
-                  Nothing     -> [_t]
-              randAlter _g _as =
-                (\r -> (!!) as (r-1)) <$> uniformR (1,E.length _as) _g
-              spinSyntax =
-                openBrace <|> closeBrace <|> pipe <|> content
-                  where
-                    openBrace = string "{"
-                    closeBrace = string "}"
-                    pipe = string "|"
-                    content =
-                      takeWhile1 ctt
-                        where
-                          ctt '{' = False
-                          ctt '}' = False
-                          ctt '|' = False
-                          ctt _   = True
-          go _ _ _ _ _ = failure
+  createSystemRandom >>= runReaderT (spin template)
+  where
+    spin t = go T.empty [] t (0::Int)
+      where
+        go o as i l
+          | l < 0  = parseFail
+          | l == 0 =
+            case parse spinSyntax i of
+              Done r m  ->
+                case m of
+                  "{" -> go o as r (l+1)
+                  "}" -> parseFail
+                  "|" -> parseFail
+                  _   -> go (o <> m) as r l
+              Partial _ -> return $ Right $ o <> i
+              Fail {}   -> parseFail
+          | l == 1 =
+            case parse spinSyntax i of
+              Done r m ->
+                case m of
+                  "{" -> go o (add as m) r (l+1)
+                  "}" -> do
+                    g <- ask
+                    r' <- spin =<< randAlter g as
+                    case r' of
+                      Left _ -> parseFail
+                      Right t' -> go (o <> t') [] r (l-1)
+                  "|" ->
+                    if E.null as
+                      then go o ["",""] r l
+                      else go o (E.snoc as "") r l
+                  _   -> go o (add as m) r l
+              Partial _ -> parseFail
+              Fail {} -> parseFail
+          | l > 1 =
+            case parse spinSyntax i of
+              Done r m ->
+                case m of
+                  "{" -> go o (add as m) r (l+1)
+                  "}" -> go o (add as m) r (l-1)
+                  _   -> go o (add as m) r l
+              Partial _ -> parseFail
+              Fail {} -> parseFail
+          where
+            add _l _t =
+              case E.unsnoc _l of
+                Just (xs,x) -> E.snoc xs $ x <> _t
+                Nothing     -> [_t]
+            randAlter _g _as =
+              (\r -> (!!) as (r-1)) <$> uniformR (1,E.length _as) _g
+        go _ _ _ _ = parseFail 
+        parseFail = fail msg
 
-failure :: IO (Either String b)
-failure = fail "Spintax template parsing failure"
+spinSyntax :: Parser T.Text
+spinSyntax =
+  openBrace <|> closeBrace <|> pipe <|> content
+    where
+      openBrace = string "{"
+      closeBrace = string "}"
+      pipe = string "|"
+      content =
+        takeWhile1 ctt
+          where
+            ctt '{' = False
+            ctt '}' = False
+            ctt '|' = False
+            ctt _   = True
+
+msg :: String
+msg = "Spintax template parsing failure"
 
