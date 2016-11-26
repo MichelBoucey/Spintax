@@ -18,6 +18,7 @@ library
   build-depends:     base >= 4.7 && < 5
                    , text
                    , attoparsec
+                   , mtl
                    , mwc-random
                    , extra
   default-language:  Haskell2010
