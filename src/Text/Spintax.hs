@@ -29,8 +29,7 @@ spintax template =
               Done r m  ->
                 case m of
                   "{" -> go o as r (l+1)
-                  "}" -> parseFail
-                  "|" -> parseFail
+                  n | n == "}" || n == "|" -> parseFail
                   _   -> go (o <> m) as r l
               Partial _ -> return $ Right $ o <> i
               Fail {}   -> parseFail
@@ -40,8 +39,8 @@ spintax template =
                 case m of
                   "{" -> go o (add as m) r (l+1)
                   "}" -> do
-                    s <- spin =<< randAlter as =<< ask
-                    case s of
+                    a <- spin =<< randAlter as =<< ask
+                    case a of
                       Left _   -> parseFail
                       Right t' -> go (o <> t') [] r (l-1)
                   "|" ->
