@@ -15,12 +15,12 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:    src
   exposed-modules:   Text.Spintax
-  build-depends:     base >= 4.7 && < 5
-                   , text >= 1.2.2.0
-                   , attoparsec >= 0.13.0.1
-                   , mtl >= 2.2.1
-                   , mwc-random >= 0.13.3.2
-                   , extra >= 1.4.3
+  build-depends:     attoparsec   >= 0.12.1.6 && < 0.14
+                   , base         >= 4.7 && < 5
+                   , extra        >= 1.4.3 && < 1.6
+                   , mtl          >= 2.2.1 && < 2.3
+                   , mwc-random   >= 0.13.3.2 && < 0.14
+                   , text         >= 1.2.2 && < 1.3
   default-language:  Haskell2010
   GHC-Options:       -Wall
 
