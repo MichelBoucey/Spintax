@@ -1,5 +1,5 @@
 name:                Spintax
-version:             0.3.0.0
+version:             0.3.1
 synopsis:            Random text generation based on spintax
 description:         Random text generation based on spintax with nested alternatives and empty options.
 homepage:            https://github.com/MichelBoucey/spintax
