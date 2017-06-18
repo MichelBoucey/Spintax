@@ -68,22 +68,18 @@ spintax template =
               (\r -> (!!) as (r-1)) <$> uniformR (1,E.length _as) _g
         go _ _ _ _ = parseFail 
         parseFail = fail msg
-
-spinSyntax :: Parser T.Text
-spinSyntax =
-  openBrace <|> closeBrace <|> pipe <|> content
-    where
-      openBrace = string "{"
-      closeBrace = string "}"
-      pipe = string "|"
-      content =
-        takeWhile1 ctt
-          where
-            ctt '{' = False
-            ctt '}' = False
-            ctt '|' = False
-            ctt _   = True
-
-msg :: String
-msg = "Spintax template parsing failure"
+        msg = "Spintax template parsing failure"
+        spinSyntax =
+          openBrace <|> closeBrace <|> pipe <|> content
+            where
+              openBrace = string "{"
+              closeBrace = string "}"
+              pipe = string "|"
+              content =
+                takeWhile1 ctt
+                  where
+                    ctt '{' = False
+                    ctt '}' = False
+                    ctt '|' = False
+                    ctt _   = True
 
