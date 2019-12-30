@@ -12,6 +12,8 @@ category:            Text
 build-type:          Simple
 cabal-version:       >=1.10
 
+Tested-With: GHC ==8.4.3 || ==8.6.5 || ==8.8.1
+
 library
   hs-source-dirs:    src
   exposed-modules:   Text.Spintax
