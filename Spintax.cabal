@@ -17,7 +17,7 @@ Tested-With: GHC ==8.4.4 || ==8.6.5 || ==8.8.3 || ==8.10.1
 library
   hs-source-dirs:    src
   exposed-modules:   Text.Spintax
-  build-depends:     attoparsec   >= 0.12.1.6 && < 0.14
+  build-depends:     attoparsec   >= 0.12.1.6 && < 0.15
                    , base         >= 4.7 && < 5
                    , extra        >= 1.4.3 && < 1.8
                    , mtl          >= 2.2.1 && < 2.3
