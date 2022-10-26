@@ -7,7 +7,6 @@ import           Control.Applicative  ((<|>))
 import           Control.Monad.Reader (runReaderT, ask)
 import           Data.Attoparsec.Text
 import qualified Data.List.Extra      as E
-import           Data.Monoid          ((<>))
 import qualified Data.Text            as T
 import           System.Random.MWC
 
