@@ -1,10 +1,10 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
 
 module Text.Spintax (spintax) where
 
 import           Control.Applicative  ((<|>))
-import           Control.Monad.Reader (runReaderT, ask)
+import           Control.Monad.Reader (ask, runReaderT)
 import           Data.Attoparsec.Text
 import qualified Data.List.Extra      as E
 import qualified Data.Text            as T
@@ -27,9 +27,9 @@ spintax template =
             case parse spinSyntax i of
               Done r m  ->
                 case m of
-                  "{" -> go o as r (l+1)
+                  "{"                      -> go o as r (l+1)
                   n | n == "}" || n == "|" -> parseFail
-                  _   -> go (o <> m) as r l
+                  _                        -> go (o <> m) as r l
               Partial _ -> return $ Right $ o <> i
               Fail {}   -> parseFail
           | l == 1 =
@@ -65,7 +65,7 @@ spintax template =
                 Nothing     -> [_t]
             randAlter _as _g =
               (\r -> (!!) as (r-1)) <$> uniformR (1,E.length _as) _g
-        go _ _ _ _ = parseFail 
+        go _ _ _ _ = parseFail
         parseFail = fail msg
         msg = "Spintax template parsing failure"
         spinSyntax =
