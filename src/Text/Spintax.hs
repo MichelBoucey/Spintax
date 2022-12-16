@@ -21,6 +21,7 @@ spintax template =
   where
     spin t = go T.empty [] t (0::Int)
       where
+
         go o as i l
           | l < 0  = parseFail
           | l == 0 =
@@ -30,7 +31,7 @@ spintax template =
                   "{"                      -> go o as r (l+1)
                   n | n == "}" || n == "|" -> parseFail
                   _                        -> go (o <> m) as r l
-              Partial _ -> return $ Right $ o <> i
+              Partial _ -> pure (Right $ o <> i)
               Fail {}   -> parseFail
           | l == 1 =
             case parse spinSyntax i of
@@ -40,8 +41,8 @@ spintax template =
                   "}" -> do
                     a <- spin =<< randAlter as =<< ask
                     case a of
-                      Left _   -> parseFail
                       Right t' -> go (o <> t') [] r (l-1)
+                      Left _   -> parseFail
                   "|" ->
                     if E.null as
                       then go o ["",""] r l
@@ -59,15 +60,16 @@ spintax template =
               Partial _ -> parseFail
               Fail {}   -> parseFail
           where
-            add _l _t =
-              case E.unsnoc _l of
-                Just (xs,x) -> E.snoc xs $ x <> _t
-                Nothing     -> [_t]
-            randAlter _as _g =
-              (\r -> (!!) as (r-1)) <$> uniformR (1,E.length _as) _g
+            add l' t'' =
+              case E.unsnoc l' of
+                Just (xs,x) -> E.snoc xs (x <> t'')
+                Nothing     -> pure t''
+            randAlter as' g =
+              (\r -> (!!) as' (r-1)) <$> uniformR (1,E.length as') g
         go _ _ _ _ = parseFail
-        parseFail = fail msg
-        msg = "Spintax template parsing failure"
+
+        parseFail = fail "Spintax template parsing failure"
+
         spinSyntax =
           openBrace <|> closeBrace <|> pipe <|> content
             where
