@@ -12,7 +12,7 @@ import           System.Random.MWC
 
 -- | Generate random texts based on a spinning syntax template, with nested alternatives and empty options.
 --
--- >λ> spintax "{{Oh my God|Awesome}, {a|the}|A|The} {quick {and dirty |||}||}{brown |pink |grey |}{fox|flea|elephant} jumps over {the|a} {lazy |smelly |sleepy |}{dog|cat|whale}{.|!|...}"
+-- >λ> spintax "{{Oh my God|Awesome|Can't believe that}, {a|the}|A|The} {quick {and dirty |||}||}{brown |pink |grey |black |yellow }{fox|flea|elephant|panther|bear} jumps over {the|a} {lazy |smelly |sleepy |grouchy }{dog|cat|whale}{|||, that's {really |||}amazing}{.|!|...}"
 -- > Right "Awesome, the quick pink fox jumps over a sleepy whale."
 --
 spintax :: T.Text -> IO (Either String T.Text)
@@ -37,9 +37,9 @@ spintax template =
             case parse spinSyntax i of
               Done r m ->
                 case m of
-                  "{" -> go o (add as m) r (l+1)
+                  "{" -> go o (addAlter m) r (l+1)
                   "}" -> do
-                    a <- spin =<< randAlter as =<< ask
+                    a <- spin =<< randAlter =<< ask
                     case a of
                       Right t' -> go (o <> t') [] r (l-1)
                       Left _   -> parseFail
@@ -47,25 +47,25 @@ spintax template =
                     if E.null as
                       then go o ["",""] r l
                       else go o (E.snoc as "") r l
-                  _   -> go o (add as m) r l
+                  _   -> go o (addAlter m) r l
               Partial _ -> parseFail
               Fail {} -> parseFail
           | l > 1 =
             case parse spinSyntax i of
               Done r m ->
                 case m of
-                  "{" -> go o (add as m) r (l+1)
-                  "}" -> go o (add as m) r (l-1)
-                  _   -> go o (add as m) r l
+                  "{" -> go o (addAlter m) r (l+1)
+                  "}" -> go o (addAlter m) r (l-1)
+                  _   -> go o (addAlter m) r l
               Partial _ -> parseFail
               Fail {}   -> parseFail
           where
-            add l' t'' =
-              case E.unsnoc l' of
-                Just (xs,x) -> E.snoc xs (x <> t'')
-                Nothing     -> pure t''
-            randAlter as' g =
-              (\r -> (!!) as' (r-1)) <$> uniformR (1,E.length as') g
+            addAlter n =
+                case E.unsnoc as of
+                  Just (xs,x) -> E.snoc xs (x <> n)
+                  Nothing     -> pure n
+            randAlter g =
+              (\r -> (!!) as (r-1)) <$> uniformR (1,E.length as) g
         go _ _ _ _ = parseFail
 
         parseFail = fail "Spintax template parsing failure"
