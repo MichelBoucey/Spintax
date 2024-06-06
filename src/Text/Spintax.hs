@@ -18,69 +18,69 @@ import           System.Random.MWC
 spintax :: T.Text -> IO (Either String T.Text)
 spintax template =
   createSystemRandom >>= runReaderT (spin template)
-  where
-    spin t = go T.empty [] t (0::Int)
-      where
+    where
+      spin t = go T.empty [] t (0::Int)
+        where
 
-        go o as i l
-          | l < 0  = parseFail
-          | l == 0 =
-            case parse spinSyntax i of
-              Done r m  ->
-                case m of
-                  "{"                      -> go o as r (l+1)
-                  n | n == "}" || n == "|" -> parseFail
-                  _                        -> go (o <> m) as r l
-              Partial _ -> pure (Right $ o <> i)
-              Fail {}   -> parseFail
-          | l == 1 =
-            case parse spinSyntax i of
-              Done r m ->
-                case m of
-                  "{" -> go o (addAlter m) r (l+1)
-                  "}" -> do
-                    a <- spin =<< randAlter =<< ask
-                    case a of
-                      Right t' -> go (o <> t') [] r (l-1)
-                      Left _   -> parseFail
-                  "|" ->
-                    if E.null as
-                      then go o ["",""] r l
-                      else go o (E.snoc as "") r l
-                  _   -> go o (addAlter m) r l
-              Partial _ -> parseFail
-              Fail {} -> parseFail
-          | l > 1 =
-            case parse spinSyntax i of
-              Done r m ->
-                case m of
-                  "{" -> go o (addAlter m) r (l+1)
-                  "}" -> go o (addAlter m) r (l-1)
-                  _   -> go o (addAlter m) r l
-              Partial _ -> parseFail
-              Fail {}   -> parseFail
-          where
-            addAlter n =
-                case E.unsnoc as of
-                  Just (xs,x) -> E.snoc xs (x <> n)
-                  Nothing     -> pure n
-            randAlter g =
-              (\r -> (!!) as (r-1)) <$> uniformR (1,E.length as) g
-        go _ _ _ _ = parseFail
-
-        parseFail = fail "Spintax template parsing failure"
-
-        spinSyntax =
-          openBrace <|> closeBrace <|> pipe <|> content
+          go o as i l
+            | l < 0  = parseFail
+            | l == 0 =
+              case parse spinSyntax i of
+                Done r m  ->
+                  case m of
+                    "{"                      -> go o as r (l+1)
+                    n | n == "}" || n == "|" -> parseFail
+                    _                        -> go (o <> m) as r l
+                Partial _ -> pure (Right $ o <> i)
+                Fail {}   -> parseFail
+            | l == 1 =
+              case parse spinSyntax i of
+                Done r m ->
+                  case m of
+                    "{" -> go o (addAlter m) r (l+1)
+                    "}" -> do
+                      a <- spin =<< randAlter =<< ask
+                      case a of
+                        Right t' -> go (o <> t') [] r (l-1)
+                        Left _   -> parseFail
+                    "|" ->
+                      if E.null as
+                        then go o ["",""] r l
+                        else go o (E.snoc as "") r l
+                    _   -> go o (addAlter m) r l
+                Partial _ -> parseFail
+                Fail {} -> parseFail
+            | l > 1 =
+              case parse spinSyntax i of
+                Done r m ->
+                  case m of
+                    "{" -> go o (addAlter m) r (l+1)
+                    "}" -> go o (addAlter m) r (l-1)
+                    _   -> go o (addAlter m) r l
+                Partial _ -> parseFail
+                Fail {}   -> parseFail
             where
-              openBrace = string "{"
-              closeBrace = string "}"
-              pipe = string "|"
-              content =
-                takeWhile1 ctt
-                  where
-                    ctt '{' = False
-                    ctt '}' = False
-                    ctt '|' = False
-                    ctt _   = True
+              addAlter n =
+                  case E.unsnoc as of
+                    Just (xs,x) -> E.snoc xs (x <> n)
+                    Nothing     -> pure n
+              randAlter g =
+                (\r -> (!!) as (r-1)) <$> uniformR (1,E.length as) g
+          go _ _ _ _ = parseFail
+
+          parseFail = fail "Spintax template parsing failure"
+
+          spinSyntax =
+            openBrace <|> closeBrace <|> pipe <|> content
+              where
+                openBrace = string "{"
+                closeBrace = string "}"
+                pipe = string "|"
+                content =
+                  takeWhile1 ctt
+                    where
+                      ctt '{' = False
+                      ctt '}' = False
+                      ctt '|' = False
+                      ctt _   = True
 
