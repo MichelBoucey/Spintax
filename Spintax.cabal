@@ -1,5 +1,5 @@
 name:                Spintax
-version:             0.3.6.1
+version:             0.3.7.0
 synopsis:            Random text generation based on spintax
 description:         Random text generation based on spintax with nested alternatives and empty options.
 homepage:            https://github.com/MichelBoucey/spintax
@@ -15,8 +15,9 @@ cabal-version:       >=1.10
 Tested-With: GHC ==8.8.4 || ==8.10.7 || ==9.0.2 || ==9.2.8 || ==9.4.8 || ==9.6.3 || ==9.8.2 || ==9.10.1
 
 library
-  hs-source-dirs:    src
+  hs-source-dirs:    src/
   exposed-modules:   Text.Spintax
+                   , Text.Spintax.RandomPhrase
   build-depends:     attoparsec   >= 0.12.1.6 && < 0.15
                    , base         >= 4.7 && < 5
                    , extra        >= 1.4.3 && < 1.9

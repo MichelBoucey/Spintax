@@ -1,11 +1,12 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Text.Spintax (spintax) where
+module Text.Spintax where
 
 import           Control.Applicative  ((<|>))
 import           Control.Monad.Reader (ask, runReaderT)
 import           Data.Attoparsec.Text
+import           Data.List            as L (intersperse)
 import qualified Data.List.Extra      as E
 import qualified Data.Text            as T
 import           System.Random.MWC
@@ -83,4 +84,16 @@ spintax template =
                       ctt '}' = False
                       ctt '|' = False
                       ctt _   = True
+
+-- * Utils
+
+-- | Write a spintax alternative
+--
+-- >λ>  writeSpintaxAlternative ["apple","apricot","banana","coconut"]
+-- "{apple|apricot|banana|coconut}"
+writeSpintaxAlternative :: [T.Text] -> T.Text
+writeSpintaxAlternative = writeSpintaxExpression "|"
+
+writeSpintaxExpression :: T.Text -> [T.Text] -> T.Text
+writeSpintaxExpression s l = "{" <> T.concat (L.intersperse s l) <> "}"
 
