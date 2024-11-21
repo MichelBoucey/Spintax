@@ -1,9 +1,13 @@
 module Text.Spintax.RandomPhrase where
 
-import qualified Data.Text    as T
+import           Data.Either.Combinators (mapRight)
+import qualified Data.Text               as T
 import           Text.Spintax
 
-type RandomPhrase = T.Text
+newtype RandomPhrase = RandomPhrase { unRandomPhrase :: T.Text }
+
+instance Show RandomPhrase where
+  show (RandomPhrase t) = show t
 
 -- | Generate random passphrase or unique id
 --
@@ -11,5 +15,7 @@ type RandomPhrase = T.Text
 -- > Right "coltrane-coconut-kant"
 --
 randomPhrase :: T.Text -> [[T.Text]] -> IO (Either String RandomPhrase)
-randomPhrase s ls = spintax $ writeSpintaxExpression s $ writeSpintaxAlternative <$> ls
+randomPhrase s ls = do
+  r <- spintax $ writeSpintaxExpression s $ writeSpintaxAlternative <$> ls
+  pure (mapRight RandomPhrase r)
 
