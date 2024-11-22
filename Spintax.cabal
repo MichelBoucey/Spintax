@@ -17,7 +17,7 @@ Tested-With: GHC ==8.8.4 || ==8.10.7 || ==9.0.2 || ==9.2.8 || ==9.4.8 || ==9.6.3
 library
   hs-source-dirs:    src/
   exposed-modules:   Text.Spintax
-  other-modules:     Text.Spintax.RandomPhrase
+                   , Text.Spintax.RandomPhrase
   build-depends:     attoparsec   >= 0.12.1.6 && < 0.15
                    , base         >= 4.7 && < 5
                    , either       >= 5 && < 6
