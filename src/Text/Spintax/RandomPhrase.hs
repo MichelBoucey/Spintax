@@ -15,7 +15,6 @@ instance Show RandomPhrase where
 -- > Right "coltrane-coconut-kant"
 --
 randomPhrase :: T.Text -> [[T.Text]] -> IO (Either String RandomPhrase)
-randomPhrase s ls = do
-  r <- spintax $ writeSpintaxExpression s $ writeSpintaxAlternative <$> ls
-  pure (mapRight RandomPhrase r)
+randomPhrase s ls =
+  mapRight RandomPhrase <$> spintax (writeSpintaxExpression s $ writeSpintaxAlternative <$> ls)
 
